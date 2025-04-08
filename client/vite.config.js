@@ -12,6 +12,9 @@ export default defineConfig({
         secure: false,
       },
     },
+    hmr: {
+      overlay: false,
+    },
   },
 
   plugins: [react(), tailwindcss()],
