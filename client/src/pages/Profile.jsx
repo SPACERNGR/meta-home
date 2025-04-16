@@ -1,10 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { updateUserStart, updateUserSuccess, updateUserFailure } from '../redux/user/userSlice.js';
+import { useDispatch } from 'react-redux';
+
 
 const Profile = () => {
   const fileRef = useRef(null);
   const { currentUser } = useSelector((state) => state.user);
   const [avatar, setAvatar] = useState(currentUser.avatar);
+  const [formData, setFormData] = useState({});
+  const dispatch = useDispatch();
 
   const handleFileChange = async (e) => {
     console.log("File changed", e.target.files[0]);
@@ -15,7 +20,8 @@ const Profile = () => {
     formData.append("file", file);
     formData.append("upload_preset", "meta-home"); // 🔁 Replace with your Cloudinary upload preset
     formData.append("folder", `users/${currentUser.uid}`);
-    formData.append("public_id", "profile"); // optional clean name
+    formData.append("public_id", `profile_${Date.now()}`);
+
 
     try {
       const res = await fetch("https://api.cloudinary.com/v1_1/dw1ol2dst/image/upload", {
@@ -42,10 +48,48 @@ const Profile = () => {
     }
   };
 
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          avatar, // ✅ add this
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+
+      dispatch(updateUserSuccess(data));
+
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+    }
+  }
+
+
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
-      <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <input
           type="file"
           accept="image/*"
@@ -65,18 +109,21 @@ const Profile = () => {
           type="text"
           id="username"
           defaultValue={currentUser.username}
+          onChange={handleChange}
           className="p-3 border border-gray-300 rounded-lg"
         />
         <input
           type="email"
           id="email"
           defaultValue={currentUser.email}
+          onChange={handleChange}
           className="p-3 border border-gray-300 rounded-lg"
         />
         <input
           type="password"
-          id="password"
           placeholder="New password"
+          onChange={handleChange}
+          id="password"
           className="p-3 border border-gray-300 rounded-lg"
         />
 
