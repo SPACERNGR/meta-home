@@ -6,10 +6,14 @@ import { useDispatch } from 'react-redux';
 
 const Profile = () => {
   const fileRef = useRef(null);
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, loading, error } = useSelector((state) => state.user);
   const [avatar, setAvatar] = useState(currentUser.avatar);
   const [formData, setFormData] = useState({});
+  const [updateSuccess, setUpdateSuccess] = useState(false);
   const dispatch = useDispatch();
+
+  console.log(formData);
+  console.log(currentUser);
 
   const handleFileChange = async (e) => {
     console.log("File changed", e.target.files[0]);
@@ -79,6 +83,7 @@ const Profile = () => {
       }
 
       dispatch(updateUserSuccess(data));
+      setUpdateSuccess(true);
 
     } catch (error) {
       dispatch(updateUserFailure(error.message));
@@ -128,12 +133,17 @@ const Profile = () => {
         />
 
         <button
+          disabled={loading}
           type="submit"
           className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 transition cursor-pointer"
         >
-          Update
+          {loading ? "Loading..." : "Update"}
         </button>
       </form>
+
+      <p className='text-red-700 mt-5'>{error ? error : ''}</p>
+
+      <p className='text-green-700 mt-5'>{updateSuccess ? "Profile updated successfully!" : ''}</p>
 
       <div className="flex justify-between mt-5">
         <span className="text-red-700 cursor-pointer">Delete account</span>
